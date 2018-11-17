@@ -42,7 +42,7 @@ class ModelOutputs():
 
     def __call__(self, x):
         target_activations, output  = self.feature_extractor(x)
-        output = output.view(output.size(0), -1)
+        output = output.view(-1 , 1024)
         output = self.model.module.classifier(output)
         return target_activations, output
 
@@ -57,8 +57,8 @@ def preprocess_image(img):
     preprocessed_img = np.ascontiguousarray(np.transpose(preprocessed_img, (2, 0, 1)))
     preprocessed_img = torch.from_numpy(preprocessed_img)
     preprocessed_img.unsqueeze_(0)
-    input = Variable(preprocessed_img, requires_grad = True)
-    return input
+    inputs = Variable(preprocessed_img, requires_grad = True)
+    return inputs
 
 def show_cam_on_image(img, mask):
     heatmap = cv2.applyColorMap(np.uint8(255*mask), cv2.COLORMAP_JET)
@@ -97,9 +97,9 @@ class GradCam:
         else:
             one_hot = torch.sum(one_hot * output)
 
-        self.model.features.zero_grad()
-        self.model.classifier.zero_grad()
-        one_hot.backward(retain_variables=True)
+        self.model.module.features.zero_grad()
+        self.model.module.classifier.zero_grad()
+        one_hot.backward(retain_graph=True)
 
         grads_val = self.extractor.get_gradients()[-1].cpu().data.numpy()
 
@@ -144,19 +144,19 @@ if __name__ == '__main__':
     grad_cam = GradCam(model = model,target_layer_names = ["35"], use_cuda=True)
 
     img = cv2.imread("/home/dgist/github/ChestXray/00009709_010.png", 1)
-    img = np.float32(cv2.resize(img, (256,256)) / 255
-    input = preprocess_image(img)
+    img = np.float32(cv2.resize(img, (256,256))) / 255
+    inputs = preprocess_image(img)
 
     # If None, returns the map for the highest scoring category.
     # Otherwise, targets the requested index.
     target_index = 1
 
-    mask = grad_cam(input, target_index)
+    mask = grad_cam(inputs, target_index)
 
     show_cam_on_image(img, mask)
 
     gb_model = GuidedBackpropReLUModel(model = models.vgg19(pretrained=True), use_cuda=args.use_cuda)
-    gb = gb_model(input, index=target_index)
+    gb = gb_model(inputs, index=target_index)
     utils.save_image(torch.from_numpy(gb), 'gb.jpg')
 
     cam_mask = np.zeros(gb.shape)

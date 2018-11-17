@@ -54,8 +54,7 @@ def preprocess_image(img):
     for i in range(3):
         preprocessed_img[:, :, i] = preprocessed_img[:, :, i] - means[i]
         preprocessed_img[:, :, i] = preprocessed_img[:, :, i] / stds[i]
-    preprocessed_img = \
-        np.ascontiguousarray(np.transpose(preprocessed_img, (2, 0, 1)))
+    preprocessed_img = np.ascontiguousarray(np.transpose(preprocessed_img, (2, 0, 1)))
     preprocessed_img = torch.from_numpy(preprocessed_img)
     preprocessed_img.unsqueeze_(0)
     input = Variable(preprocessed_img, requires_grad = True)
@@ -113,10 +112,8 @@ class GradCam:
         for i, w in enumerate(weights):
             cam += w * target[i, :, :]
 
-        cam = np.maximum(cam, 0)
-        cam = cv2.resize(cam, (224, 224))
-        cam = cam - np.min(cam)
-        cam = cam / np.max(cam)
+        cam = cv2.resize(cam, (256, 256))
+
         return cam
 
 
@@ -147,12 +144,12 @@ if __name__ == '__main__':
     grad_cam = GradCam(model = model,target_layer_names = ["35"], use_cuda=True)
 
     img = cv2.imread("/home/dgist/github/ChestXray/00009709_010.png", 1)
-    img = np.float32(cv2.resize(img, (224, 224))) / 255
+    img = np.float32(cv2.resize(img, (256,256)) / 255
     input = preprocess_image(img)
 
     # If None, returns the map for the highest scoring category.
     # Otherwise, targets the requested index.
-    target_index = None
+    target_index = 1
 
     mask = grad_cam(input, target_index)
 

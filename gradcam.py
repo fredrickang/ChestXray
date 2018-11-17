@@ -43,7 +43,7 @@ class ModelOutputs():
     def __call__(self, x):
         target_activations, output  = self.feature_extractor(x)
         output = output.view(output.size(0), -1)
-        output = self.model.classifier(output)
+        output = self.model.module.classifier(output)
         return target_activations, output
 
 def preprocess_image(img):
@@ -146,7 +146,7 @@ if __name__ == '__main__':
     
     grad_cam = GradCam(model = model,target_layer_names = ["35"], use_cuda=True)
 
-    img = cv2.imread(args.image_path, 1)
+    img = cv2.imread("/home/dgist/github/ChestXray/00009709_010.png", 1)
     img = np.float32(cv2.resize(img, (224, 224))) / 255
     input = preprocess_image(img)
 

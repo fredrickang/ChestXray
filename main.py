@@ -103,7 +103,7 @@ def main():
 
     train_dataset = datasets.ImageFolder(traindir,
                                          transforms.Compose([transforms.Resize(256),
-                                                             transforms.RandomCrop(224),
+                                                             transforms.CenterCrop(224),
                                                              transforms.RandomHorizontalFlip(),
                                                              transforms.ToTensor(),
                                                              normalize, ]))
@@ -126,6 +126,7 @@ def main():
 
     mode = 'evaluate' if args.evaluate else 'training'
     f.write("Mode :" + mode + "\n")
+    
     for epoch in range(args.start_epoch, args.epochs):
         adjust_learning_rate(optimizer, args.lr, epoch, args.epoch_decay)
 

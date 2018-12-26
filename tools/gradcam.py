@@ -117,12 +117,14 @@ class GradCam:
         return cam
 
 
+
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--use-cuda', action='store_true', default=False,
-	                    help='Use NVIDIA GPU acceleration')
+                        help='Use NVIDIA GPU acceleration')
     parser.add_argument('--image-path', type=str, default='./examples/both.png',
-	                    help='Input image path')
+                        help='Input image path')
+
     args = parser.parse_args()
     args.use_cuda = args.use_cuda and torch.cuda.is_available()
     if args.use_cuda:
@@ -131,20 +133,20 @@ def get_args():
         print("Using CPU for computation")
     return args
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     args = get_args()
 
     # loading models
     model = densenet121()
     model = torch.nn.DataParallel(model)
-    checkpoint = torch.load("/home/dgist/github/ChestXray/densenet121_checkpoint.pth")
+    checkpoint = torch.load("/Users/fredrickang/Desktop/github/ChestXray/logs/densenet121_model_best.pth")
     model.load_state_dict(checkpoint['state_dict'])
-    
-    grad_cam = GradCam(model = model,target_layer_names = ["35"], use_cuda=True)
 
-    img = cv2.imread("/home/dgist/github/ChestXray/00009709_010.png", 1)
-    img = np.float32(cv2.resize(img, (256,256))) / 255
+    grad_cam = GradCam(model=model, target_layer_names=["denseblock3"], use_cuda=True)
+
+    img = cv2.imread("/Users/fredrickang/Desktop/github/ChestXray/00009709_010.png", 1)
+    img = np.float32(cv2.resize(img, (256, 256))) / 255
     inputs = preprocess_image(img)
 
     # If None, returns the map for the highest scoring category.
@@ -154,14 +156,3 @@ if __name__ == '__main__':
     mask = grad_cam(inputs, target_index)
 
     show_cam_on_image(img, mask)
-
-    gb_model = GuidedBackpropReLUModel(model = models.vgg19(pretrained=True), use_cuda=args.use_cuda)
-    gb = gb_model(inputs, index=target_index)
-    utils.save_image(torch.from_numpy(gb), 'gb.jpg')
-
-    cam_mask = np.zeros(gb.shape)
-    for i in range(0, gb.shape[0]):
-        cam_mask[i, :, :] = mask
-
-    cam_gb = np.multiply(cam_mask, gb)
-    utils.save_image(torch.from_numpy(cam_gb), 'cam_gb.jpg')
